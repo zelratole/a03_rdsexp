@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>영웅 길드 명부 시스템</title>
+    <!-- jQuery CDN -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        /* 화려한 게임 UI 컨셉의 CSS */
+        @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+        
+        body {
+            background-color: #0b0f19;
+            color: #fff;
+            font-family: 'Jua', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-image: radial-gradient(circle at top, #1a2542 0%, #0b0f19 70%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        /* 네온 타이틀 효과 */
+        h1 {
+            font-size: 3rem;
+            color: #fff;
+            text-shadow: 
+                0 0 5px #00e5ff, 
+                0 0 15px #00e5ff, 
+                0 0 30px #00e5ff, 
+                0 0 50px #00e5ff;
+            margin-bottom: 40px;
+            animation: pulsate 1.5s infinite alternate;
+        }
+
+        @keyframes pulsate {
+            100% { text-shadow: 0 0 4px #fff, 0 0 11px #fff, 0 0 19px #fff, 0 0 40px #0fa; }
+            0% { text-shadow: 0 0 2px #fff, 0 0 4px #fff, 0 0 6px #fff, 0 0 10px #0fa; }
+        }
+
+        /* 검색 박스 */
+        .search-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #00e5ff;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        input {
+            padding: 12px 20px;
+            font-size: 1.2rem;
+            font-family: inherit;
+            border: 2px solid #3a4a6b;
+            background: #12192b;
+            color: #00e5ff;
+            border-radius: 8px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            border-color: #f0f;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            font-family: inherit;
+            background: linear-gradient(45deg, #f0f, #00e5ff);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.6);
+        }
+
+        /* 영웅 카드 그리드 레이아웃 */
+        .hero-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        /* 개별 영웅 카드 */
+        .hero-card {
+            background: linear-gradient(135deg, #1c263d 0%, #0d1323 100%);
+            border: 1px solid #3a4a6b;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .hero-card:hover {
+            transform: translateY(-10px);
+            border-color: #00e5ff;
+            box-shadow: 0 10px 20px rgba(0, 229, 255, 0.4);
+        }
+
+        /* 카드 상단 데코레이션 */
+        .hero-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 5px;
+            background: linear-gradient(90deg, #f0f, #00e5ff);
+        }
+
+        .nickname {
+            font-size: 1.8rem;
+            color: #fce803;
+            margin: 0 0 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .level {
+            font-size: 1.2rem;
+            background: #f0f;
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 20px;
+            box-shadow: 0 0 10px #f0f;
+        }
+
+        .job-class {
+            font-size: 1.2rem;
+            color: #00e5ff;
+            margin: 0 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #3a4a6b;
+        }
+
+        .stats p {
+            margin: 8px 0;
+            font-size: 1.1rem;
+            color: #a0b0d0;
+        }
+
+        .stats span {
+            color: #fff;
+            display: inline-block;
+            width: 90px;
+        }
+
+        /* 로딩 및 데이터 없음 상태 */
+        .message {
+            font-size: 1.5rem;
+            color: #ff4757;
+            text-shadow: 0 0 10px #ff4757;
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>⚔️ 영웅 길드 검색 시스템 ⚔️</h1>
+        
+        <div class="search-box">
+            <input type="text" id="keyword-nickname" placeholder="닉네임 (예: 군주)">
+            <input type="text" id="keyword-job" placeholder="직업 (예: 전사)">
+            <button id="btn-search">영웅 검색</button>
+        </div>
+
+        <div class="hero-grid" id="hero-container">
+            <!-- AJAX로 영웅 카드가 여기에 렌더링 됩니다 -->
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // 영웅 데이터를 불러오는 함수
+            function fetchHeros() {
+                // 입력값 가져오기
+                const nicknameVal = $("#keyword-nickname").val();
+                const jobVal = $("#keyword-job").val();
+                
+                // 검색 전 로딩 메시지
+                $("#hero-container").html('<div class="message">데이터를 소환하는 중... 🔮</div>');
+
+                // jQuery AJAX 통신
+                $.ajax({
+                    url: "/api/heros",
+                    type: "GET",
+                    data: {
+                        nickname: nicknameVal,
+                        job_class: jobVal
+                    },
+                    dataType: "json",
+                    success: function(data) {
+                        renderHeros(data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("통신 에러:", error);
+                        $("#hero-container").html('<div class="message">⚠️ 차원문 연결 실패 (서버 에러)</div>');
+                    }
+                });
+            }
+
+            // 전달받은 JSON 데이터를 HTML 구조로 변환하여 출력하는 함수
+            function renderHeros(heroList) {
+                const $container = $("#hero-container");
+                $container.empty(); // 기존 내용 지우기
+
+                if (heroList.length === 0) {
+                    $container.html('<div class="message">조건에 맞는 영웅이 존재하지 않습니다. 텅~ 👻</div>');
+                    return;
+                }
+
+                // 데이터 순회하며 카드 생성
+                let htmlStr = "";
+                $.each(heroList, function(index, hero) {
+                    // hero_id, nickname, job_class, level, main_skill, tactical_position, join_date
+                    htmlStr += `
+                        <div class="hero-card">
+                            <h2 class="nickname">${hero.nickname} <span class="level">Lv.${hero.level}</span></h2>
+                            <p class="job-class">직업: ${hero.job_class}</p>
+                            <div class="stats">
+                                <p><span>🔥 주력 스킬:</span> ${hero.main_skill}</p>
+                                <p><span>🛡️ 포지션:</span> ${hero.tactical_position}</p>
+                                <p><span>📅 가입일:</span> ${hero.join_date}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                // 완성된 HTML을 컨테이너에 삽입
+                $container.html(htmlStr);
+            }
+
+            // 버튼 클릭 이벤트
+            $("#btn-search").click(function() {
+                fetchHeros();
+            });
+
+            // 엔터키 입력 이벤트 (편의성)
+            $("#keyword-nickname, #keyword-job").keypress(function(e) {
+                if (e.which === 13) { // 13 is Enter
+                    fetchHeros();
+                }
+            });
+
+            // 페이지 로드 시 최초 전체 목록 한 번 불러오기
+            fetchHeros();
+        });
+    </script>
+</body>
+</html>
